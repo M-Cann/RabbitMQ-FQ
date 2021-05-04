@@ -1,0 +1,16 @@
+consumers_fq = fair_queue kuyruğunu consume eder
+consumers_normal = normal_queue kuyruğunu consume eder
+consumer_rr = fair_queue ve normal_queue kuyrukları dışındaki diğer kuyrukları Round Robin algoritması ile consume eder
+
+middle_layer = normal_queue dışındaki diğer tüm kuyrukları Round Robin algoritması ile sıralayarak fair_queue kuyruğunu oluşturur. Hem consume eder hem de producer gibi kuyruk oluşturur.
+
+producer_normal = scenarios dosyasındaki seneryoları, normal_queue adındaki kuyruğa aktarır
+producer_rr = scenarios dosyasındaki seneryoları, her kullanıcının kendi kuyruğu olacak şekilde kuyruklar oluşturarak aktarır.
+producer_all = scenarios dosyasındaki seneryoları, hem normal_queue kuyruğuna hem de her kullanıcı için kendi kuyruk yapısı olacak şekilde aktarır.
+
+excel_processes = istatistikleri görüntülemek ve excel dosyasında işlem yapmak için yazılmış modül
+scenarios_creator = scenarios dosyasını rastgele sayılar ve rastgele harflerle doldurur.
+
+Programın çalışma mantığı:
+middle_layer, rabbitMQ içerisindeki tüm kuyrukları (normal_queue hariç) Hepsinden teker teker alarak adil bir kuyruk yapısına çevirir. Oluşturduğu yeni kuyruk fair_queue adındadır. 
+consumer_fq, oluşan adil kuyruk yapısını consume eder.
