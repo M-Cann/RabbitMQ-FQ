@@ -20,6 +20,10 @@ def excel_clear():
     ws['G1'] = '1. çözüm için en yüksek ilk bekleme süresi'
     ws['H1'] = '2. çözüm için en yüksek ilk bekleme süresi kullanıcısı'
     ws['I1'] = '2. çözüm için en yüksek ilk bekleme süresi'
+    ws['J1'] = '1. çözüm için toplam mesaj sayısı'
+    ws['K1'] = '2. çözüm için toplam mesaj sayısı'
+    ws['L1'] = '1. çözüm için toplam beklenen süre'
+    ws['M1'] = '2. çözüm için toplam beklenen süre'
     wb.save("statistics.xlsx")
 
 def excel_read():

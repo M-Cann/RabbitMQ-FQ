@@ -8,12 +8,12 @@ connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost')
 channel = connection.channel()
 
 os.chdir("..")
-path = "scenarios/scenarios1.txt"
+path = "scenarios/scenarios3.txt"
 f = open(path, "r")
 
 wb = load_workbook("statistics.xlsx")
 ws = wb.active
-ws.append([path[10:20]])
+ws.append([path[10:25]])
 wb.save("statistics.xlsx")
 for y in f:
     a = y.split('-')
@@ -32,6 +32,6 @@ for y in f:
             properties=pika.BasicProperties(
                 delivery_mode=2,
         ))
-        print(" [x] Sent %r" % message)
+print("Mesajlar gönderildi")
 
 connection.close()

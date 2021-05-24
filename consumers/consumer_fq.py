@@ -11,22 +11,31 @@ channel = connection.channel()
 os.chdir("..")
 
 start_times = {}
-start_times2 = {}
 receive_times = {}
-finish_times = {}
 statistics_dic = {}
+queues = []
 consumers = []
-process_times = []
 proc_time = 0.0
-toplam = 0
 
 excel_receive_times = []
 excel_start_times = []
+excel_passing_times = []
 excel_first_messages = {}
 
 def queue_list(user='guest', password='guest', host='localhost', port=15672, virtual_host=None):
     url = 'http://%s:%s/api/queues/%s' % (host, port, virtual_host or '')
     response = requests.get(url, auth=(user, password))
+
+def queue_list1(user='guest', password='guest', host='localhost', port=15672, virtual_host=None):
+    path = 'C:\\Program Files\\RabbitMQ Server\\rabbitmq_server-3.8.14\sbin'
+    os.chdir(path)
+    a = os.popen("rabbitmqctl list_queues")
+    writing = a.read()
+    line = writing.splitlines()
+    global queues
+    for i in range (3, len(line)):
+        queue_split = line[i].split("\t")
+        queues.append(queue_split[0])
 
 channel.basic_qos(prefetch_count=1)
 
@@ -45,6 +54,7 @@ def basic_consume():
             start_time = received_data['Time']
             excel_receive_times.append(receive_time)
             excel_start_times.append(start_time)
+            excel_passing_times.append(receive_time-float(start_time))
             if excel_first_messages.get(user)==None:
                 excel_first_messages[user]=receive_time-float(start_time)
             if statistics_dic.get(user)==None:
@@ -54,15 +64,7 @@ def basic_consume():
             if start_times.get(user)==None:
                 receive_times[user] = receive_time
                 start_times[user] = start_time
-                start_times2[user] = start_time
-            #print(" [x] Received", body, "receive time:", receive_time)
-            #time.sleep(proc_time)     
-            #print(" [x] Done")
             ch.basic_ack(delivery_tag=method.delivery_tag)
-            #finish_time = time.time()
-            #finish_times[user] = finish_time
-            #procces_time = finish_time-(receive_time+proc_time)
-            #process_times.append(procces_time)
         global consumers
         if not 'fair_queue' in consumers:
             channel.queue_declare(queue='fair_queue', durable=True)
@@ -78,12 +80,17 @@ def excel_statics():
     while True:
         inpt = input()
         if inpt == 'p':
+            #path = 'C:\\Users\\asus\\Desktop\\RabbitMQ'
+            #os.chdir(path)
             wb = load_workbook("statistics.xlsx")
             ws = wb.active
             toplam = 0
             ilk_mesaj = excel_receive_times[0]-float(excel_start_times[0])
             geçen_süre = excel_receive_times[len(excel_receive_times)-1]-float(excel_start_times[0])
-            print(excel_first_messages)
+            print(len(excel_receive_times))
+            print(geçen_süre)
+            for i in excel_passing_times:
+                toplam  = toplam + i
             count = 1
             for row in ws:
                 if row[2].value==None:
@@ -91,43 +98,20 @@ def excel_statics():
                     cell4 = 'E'+str(count)
                     cell7 = 'H'+str(count)
                     cell8 = 'I'+str(count)
-                    ws[cell2] = geçen_süre/len(excel_receive_times)
+                    cell10 = 'K'+str(count)
+                    cell12 = 'M'+str(count)
+                    ws[cell2] = toplam/len(excel_receive_times)
                     ws[cell4] = ilk_mesaj
                     ws[cell7] = get_key(max(excel_first_messages.values()))
                     ws[cell8] = max(excel_first_messages.values())
+                    ws[cell10] = len(excel_receive_times)
+                    ws[cell12] = geçen_süre
                 count = count + 1
             wb.save("statistics.xlsx")
             excel_first_messages.clear()
             excel_receive_times.clear()
             excel_start_times.clear()
-
-def statistics():
-    while True:
-        inpt = input()
-        if inpt == 'w':
-            for i in receive_times:
-                print(i, " consumera ulaşma süresi: ", receive_times[i]-float(start_times2[i]), sep='')
-            start_times2.clear()
-            receive_times.clear()
-        if inpt == 'e':
-            for i in statistics_dic:
-                print(i, ", ", statistics_dic[i], " işlem için bekleme süresi: ", finish_times[i]-float(start_times[i]), sep='')
-            print()
-            for i in statistics_dic:
-                print(i, "ortalaması:", (finish_times[i]-float(start_times[i]))/statistics_dic[i])
-            start_times.clear()
-            finish_times.clear()
-            statistics_dic.clear()
-        if inpt == 'r':
-            print(process_times)
-            print()
-            global toplam
-            for i in process_times:          
-                toplam = toplam + i
-            print("İşlem başına programın çalışma ortalaması:", toplam/len(process_times))
-            toplam=0
-        if inpt == 'c':
-            print(consumers)
+            excel_passing_times.clear()
 
 t1 = threading.Thread(target=basic_consume)
 t1.start()
@@ -135,11 +119,3 @@ t2 = threading.Thread(target=start_consume)
 t2.start()
 t3 = threading.Thread(target=excel_statics)
 t3.start()
-
-# 1. çözüm ortalama işlenme sürsi  - 2. çözüm ortalama işlenme süresi - 1. çözüm ilk mesaj işlenme süresi - 2. çözüm ilk mesaj işlenme süresi - 1. çözüm için en yüksek ilk bekleme süresi ve kullanıcısı  - 2. çözüm için en yüksek bekleme süresi ve kullanıcısı 
-#senaryo1
-#senaryo2
-
-#1000 kullanıcılı senaryolar üret (senaryoları kod ile üret)
-#senaryo sayısını arttır
-# sonuçları excel dosyası olarak yazdır. 

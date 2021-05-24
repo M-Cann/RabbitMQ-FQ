@@ -8,7 +8,7 @@ connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost')
 channel = connection.channel()
 
 os.chdir("..")
-path = "scenarios/scenarios26.txt"
+path = "scenarios/scenarios0.txt"
 f = open(path, "r")
 
 channel.queue_declare(queue='normal_queue', durable=True)
