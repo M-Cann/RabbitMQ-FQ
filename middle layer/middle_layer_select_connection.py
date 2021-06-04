@@ -1,16 +1,14 @@
-import threading 
 import pika
 import os 
 import json
-import time
-from openpyxl import Workbook,load_workbook
 
 channel = None
 queues = []
 consumers = []
-times = {}
+message_count = 0
 
 def queue_list():
+    global message_count
     path = 'C:\\Program Files\\RabbitMQ Server\\rabbitmq_server-3.8.14\sbin'
     os.chdir(path)
     a = os.popen("rabbitmqctl list_queues")
@@ -21,6 +19,10 @@ def queue_list():
         queue_split = line[i].split("\t")
         if not (queue_split[0] in queues):
             queues.append(queue_split[0])
+    for j in range (3, len(line)):
+        count_split = line[j].split("\t")
+        if not(count_split[0]=='fair_queue') and not(count_split[0]=='normal_queue'):
+            message_count = message_count + int(count_split[1])
 
 def on_open(connection):
     connection.channel(on_open_callback=on_channel_open)    
@@ -36,32 +38,29 @@ def queue_declare(a):
     start_consuming()
 
 def start_consuming():
+    global message_count
     global channel
     queue_list()
+    if message_count==0:
+        start_consuming()
     for queue_name in queues:
-        if not (queue_name in consumers) and not(queue_name=='fair_queue'):
+        if not(queue_name=='fair_queue') and not(queue_name=='normal_queue'):
             channel.basic_consume(queue_name, on_message)
             consumers.append(queue_name)
 
 def on_message(ch, method, properties, body):
-    received_data = json.loads(body)
-    user = received_data['User']
-    time1 = received_data['Time']
-    x = received_data['x']
-    message = {'User': user,
-    'Time': time1,
-    'x': x}
-    json_str = json.dumps(message)
-    if times.get(user)==None:
-        times[user] = time.time()-float(time1)
+    global message_count
     channel.basic_publish(
         exchange='', 
         routing_key='fair_queue', 
-        body=json_str, 
+        body=body, 
         properties=pika.BasicProperties(
                 delivery_mode=2,
     ))
+    message_count-=1
     channel.basic_ack(delivery_tag=method.delivery_tag)
+    if message_count==0:
+        start_consuming()
 
 parameters = pika.URLParameters('amqp://guest:guest@localhost:5672/%2F')
 connection = pika.SelectConnection(parameters=parameters, on_open_callback=on_open)                                 

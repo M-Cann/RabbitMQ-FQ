@@ -5,7 +5,6 @@ import time
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
-channel.queue_declare(queue='normal_queue', durable=True)
 
 def scenarios_publish(i):
     os.chdir("..")
@@ -15,6 +14,7 @@ def scenarios_publish(i):
         a = x.split('-')
         user = a[0]
         piece = int(a[1])
+        channel.queue_declare(queue=user, durable=True)
         for x in range(1, piece+1):
             message = {'User': user,
             'Time': time.time(),
@@ -22,7 +22,7 @@ def scenarios_publish(i):
             json_str = json.dumps(message)
             channel.basic_publish(
                 exchange='', 
-                routing_key='normal_queue', 
+                routing_key=user, 
                 body=json_str, 
                 properties=pika.BasicProperties(
                     delivery_mode=2,)
