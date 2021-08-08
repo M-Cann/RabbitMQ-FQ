@@ -8,7 +8,7 @@ queues=[]
 
 def queue_list():
     global queues
-    path = 'C:\\Program Files\\RabbitMQ Server\\rabbitmq_server-3.8.14\sbin'
+    path = 'C:\\Program Files\\RabbitMQ Server\\rabbitmq_server-3.8.17\sbin'
     os.chdir(path)
     a = os.popen("rabbitmqctl list_queues")
     writing = a.read()
@@ -21,5 +21,6 @@ def queue_list():
 queue_list()
 
 for queue_name in queues:
-    if not(queue_name=='normal_queue') and not(queue_name=='fair_queue'):
+    if not(queue_name=='normal_queue') and not(queue_name=='fair_queue') and not(queue_name=='queue_list'):
         channel.queue_delete(queue_name)
+        

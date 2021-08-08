@@ -14,32 +14,39 @@ channel.basic_qos(prefetch_count=1)
 #os.chdir("..")
 first_message = {}
 statistics_dic = {}
-total_time = {}
+all_process_total_time = {}
 queue_start_time = {}
 queue_finish_time = {}
-avarage=[] #Bu kısma bak fazladan hesap yapılıyor daha çok istatistik çıkarılabilir
-queues = []
+avarage={} 
+total_message_count = 0
+producer_start_time = 0
+process_finish_time = 0
 
 def basic_consume():
     def callback(ch, method, properties, body):
+        global producer_start_time
+        global process_finish_time
         receive_time = time.time()  
         received_data = json.loads(body)
         user = received_data['User']
         start_time = received_data['Time']
         process_time=receive_time-start_time
+        if producer_start_time==0:
+            producer_start_time=start_time
         if statistics_dic.get(user)==None:
             statistics_dic[user]=1
         else:
             statistics_dic[user]=statistics_dic.get(user)+1
         if first_message.get(user)==None:
             first_message[user]=process_time
-        if total_time.get(user)==None:
-            total_time[user]=process_time
+        if all_process_total_time.get(user)==None:
+            all_process_total_time[user]=process_time
         else:
-            total_time[user]=total_time.get(user)+process_time
+            all_process_total_time[user]+=process_time
         if queue_start_time.get(user)==None:
             queue_start_time[user]=start_time
         queue_finish_time[user]=receive_time
+        process_finish_time = receive_time
         ch.basic_ack(delivery_tag=method.delivery_tag)
     channel.basic_consume(queue='fair_queue', on_message_callback=callback) 
     channel.start_consuming()
@@ -53,15 +60,13 @@ def statistics_write():
     while True:
         inpt = input()
         if inpt == 'p':
-            path = 'C:\\Users\\asus\\Desktop\\RabbitMQ 1'
-            os.chdir(path)
+            #path = 'C:\\Users\\asus\\Desktop\\RabbitMQ 1'
+            #os.chdir(path)
             wb = load_workbook("statistics.xlsx")
             ws = wb.active
-            print(first_message)
-            print(statistics_dic)
-            print(total_time)
             for i in queue_start_time:
-                avarage.append((queue_finish_time.get(i)-queue_start_time.get(i))/statistics_dic.get(i))
+                avarage[i]=all_process_total_time.get(i)/statistics_dic.get(i)
+                #avarage[i]=(queue_finish_time.get(i)-queue_start_time.get(i))/statistics_dic.get(i)
             exit=False
             i=6
             count=0
@@ -92,18 +97,54 @@ def statistics_write():
                         cell1=get_column_letter(i)+str(line)
                         cell2=get_column_letter(i+1)+str(line)
                         ws[cell1]=first_message[j]
-                        ws[cell2]=avarage[count]
-                        count+=1
+                        ws[cell2]=avarage[j]
                         exit=True
                 else:
                     i+=6
+
+            wb2 = load_workbook("statistics2.xlsx")
+            ws2 = wb2.active
+            global total_message_count
+            global process_finish_time
+            global producer_start_time
+            for i in statistics_dic:
+                total_message_count += statistics_dic.get(i)
+            exit=False
+            i=4
+            longest_first_message_time = max(first_message.values())
+            longest_first_message_queue = [k for k, v in first_message.items() if v == longest_first_message_time]
+            while exit==False:
+                column = get_column_letter(i)
+                if ws2[column+str(3)].value==None and ws2[column+str(4)].value==None and ws2[column+str(5)].value==None and ws2[column+str(6)].value==None and ws2[column+str(7)].value==None:
+                    cell1=get_column_letter(i)+str(3)
+                    cell2=get_column_letter(i)+str(4)
+                    cell3=get_column_letter(i)+str(5)
+                    cell4=get_column_letter(i)+str(6)
+                    cell5=get_column_letter(i)+str(7)
+                    ws2[cell1]=total_message_count
+                    ws2[cell2]=process_finish_time-producer_start_time
+                    ws2[cell3]=(process_finish_time-producer_start_time)/total_message_count
+                    ws2[cell4]=longest_first_message_queue[0]
+                    ws2[cell5]=longest_first_message_time
+                    exit=True
+                else:
+                    i+=3
+            print('total_message_count:', total_message_count)
+
             wb.save("statistics.xlsx")
+            wb2.save("statistics2.xlsx")
+
             first_message.clear()
             statistics_dic.clear()
-            total_time.clear()
+            all_process_total_time.clear()
             queue_start_time.clear()
             queue_finish_time.clear()
             avarage.clear()
+            longest_first_message_queue.clear()
+            longest_first_message_time = 0
+            total_message_count = 0
+            producer_start_time = 0
+            process_finish_time = 0
 
 
 t1 = threading.Thread(target=basic_consume)

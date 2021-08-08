@@ -30,4 +30,4 @@ def scenarios_publish(i):
     print("Seneryo "+str(i)+" mesajları gönderildi.")
 
 scenarios_publish(0)
-channel.close()    
+channel.close()      
