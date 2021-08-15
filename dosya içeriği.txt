@@ -11,6 +11,8 @@ producer_all = scenarios dosyasındaki seneryoları, hem normal_queue kuyruğuna
 excel_processes = istatistikleri görüntülemek ve excel dosyasında işlem yapmak için yazılmış modül
 scenarios_creator = scenarios dosyasını rastgele sayılar ve rastgele harflerle doldurur.
 
+deneme klasöründe thread ile çalışma örnekleri var
+
 Programın çalışma mantığı:
 middle_layer, rabbitMQ içerisindeki tüm kuyrukları (normal_queue hariç) Hepsinden teker teker alarak adil bir kuyruk yapısına çevirir. Oluşturduğu yeni kuyruk fair_queue adındadır. 
 consumer_fq, oluşan adil kuyruk yapısını consume eder.
